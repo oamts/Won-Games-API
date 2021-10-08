@@ -39,25 +39,50 @@ async function create(name, entityName){
   }
 }
 
+async function createManyToManyData(products) {
+  const developers = {};
+  const publishers = {};
+  const categories = {};
+  const platforms = {};
+
+  products.forEach((product) => {
+    const { developer, publisher, genres, supportedOperatingSystems } = product;
+
+    genres &&
+    genres.forEach((item) => {
+      categories[item] = true;
+    });
+    supportedOperatingSystems &&
+    supportedOperatingSystems.forEach((item) => {
+      platforms[item] = true;
+    });
+    developers[developer] = true;
+    publishers[publisher] = true;
+  });
+
+  return Promise.all([
+    ...Object.keys(developers).map((name) => create(name, "developer")),
+    ...Object.keys(publishers).map((name) => create(name, "publisher")),
+    ...Object.keys(categories).map((name) => create(name, "category")),
+    ...Object.keys(platforms).map((name) => create(name, "platform")),
+  ]);
+}
+
 module.exports = {
   populate: async (params) => {
-    const gogApi = `https://www.gog.com/games/ajax/filtered?mediaType=game&page=1&sort=popularity`;
+    const gogApiUrl = `https://www.gog.com/games/ajax/filtered?mediaType=game&page=1&sort=popularity`;
 
-    const {data: { products }} = await axios.get(gogApi);
+    const {
+      data: { products },
+    } = await axios.get(gogApiUrl);
 
-    console.log((products[1]));
+    // console.log(products[0]);
 
-   /* await strapi.services.publisher.create({
-      name: products[0].publisher,
-      slug: slugify(products[0].publisher).toLowerCase(),
-    });
+    await createManyToManyData([products[2], products[3]])
 
-    await strapi.services.developer.create({
-      name: products[0].developer,
-      slug: slugify(products[0].developer).toLowerCase(),
-    });
-*/
-    await create(products[1].publisher, 'publisher')
-    await create(products[1].developer, 'developer')
-  }
+    // await create(products[1].publisher, "publisher");
+    // await create(products[1].developer, "developer");
+
+    // console.log(await getGameInfo(products[1].slug));
+  },
 };
